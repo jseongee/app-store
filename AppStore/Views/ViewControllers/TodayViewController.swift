@@ -1,10 +1,12 @@
 import UIKit
 
 class TodayViewController: UIViewController {
-    
+
     @IBOutlet weak var collectionView: UICollectionView!
 
-    private var dataSource: UICollectionViewDiffableDataSource<Section, Card>!
+    private let sections = Section.allCases
+
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -14,8 +16,9 @@ class TodayViewController: UIViewController {
     }
 
     private func setupCollectionView() {
-        collectionView.collectionViewLayout = createLayout()
+        collectionView.collectionViewLayout = getLayout()
         collectionView.register(CardCell.self, forCellWithReuseIdentifier: "CardCell")
+        collectionView.register(RecommendCell.self, forCellWithReuseIdentifier: "RecommendCell")
         collectionView.register(
             HeaderView.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
@@ -23,7 +26,19 @@ class TodayViewController: UIViewController {
         )
     }
 
-    private func createLayout() -> UICollectionViewCompositionalLayout {
+    private func getLayout() -> UICollectionViewCompositionalLayout {
+        let layout = UICollectionViewCompositionalLayout { sectionIndex, _ in
+            let section = self.sections[sectionIndex]
+            switch section {
+                case .today: return self.getTodaySection()
+                case .recommend: return self.getRecommentSection()
+            }
+        }
+        layout.register(SectionBackgroundDecorationView.self, forDecorationViewOfKind: "section-background")
+        return layout
+    }
+
+    private func getTodaySection() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(80))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
@@ -42,15 +57,48 @@ class TodayViewController: UIViewController {
         )
         section.boundarySupplementaryItems = [header]
         
-        return UICollectionViewCompositionalLayout(section: section)
+        return section
+    }
+
+    private func getRecommentSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(72))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(72))
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32)
+
+        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(60))
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        section.boundarySupplementaryItems = [header]
+
+        let background = NSCollectionLayoutDecorationItem.background(elementKind: "section-background")
+        background.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+        section.decorationItems = [background]
+
+        return section
     }
 
     private func setupDataSource() {
-        dataSource = UICollectionViewDiffableDataSource<Section, Card>(collectionView: collectionView) {
+        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) {
             collectionView, indexPath, item in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CardCell", for: indexPath) as! CardCell
-            cell.label.text = item.title
-            return cell
+            switch item {
+                case .card(let card):
+                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CardCell", for: indexPath) as! CardCell
+                    cell.label.text = card.title
+                    return cell
+
+                case .app(let app):
+                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "RecommendCell", for: indexPath) as! RecommendCell
+                    cell.configure(with: app)
+                    return cell
+            }
         }
 
         dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
@@ -59,16 +107,18 @@ class TodayViewController: UIViewController {
                 withReuseIdentifier: "HeaderView",
                 for: indexPath
             ) as! HeaderView
-            header.label.text = "투데이"
+
+            let section = self.sections[indexPath.section]
+            header.configure(for: section)
+
             return header
         }
 
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Card>()
-        snapshot.appendSections([.today])
-        snapshot.appendItems([
-            Card(title: "카드 1"),
-            Card(title: "카드 2"),
-        ])
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        snapshot.appendSections(sections)
+        snapshot.appendItems(todayItems, toSection: .today)
+        snapshot.appendItems(recommendItems, toSection: .recommend)
+
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 }
