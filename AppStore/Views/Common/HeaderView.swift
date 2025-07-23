@@ -29,11 +29,11 @@ class HeaderView: UICollectionReusableView {
 
     func configure(for section: Section) {
         switch section {
-        case .today:
-            titleLabel.text = "투데이"
-        case .recommend:
-            subtitleLabel.text = "추천"
-            titleLabel.text = "모두에게 사랑받는 앱"
+            case .recommend:
+                subtitleLabel.text = "추천"
+                titleLabel.text = "모두에게 사랑받는 앱"
+            default:
+                break
         }
     }
 

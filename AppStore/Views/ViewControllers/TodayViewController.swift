@@ -17,13 +17,19 @@ class TodayViewController: UIViewController {
 
     private func setupCollectionView() {
         collectionView.collectionViewLayout = getLayout()
-        collectionView.register(CardCell.self, forCellWithReuseIdentifier: "CardCell")
-        collectionView.register(RecommendCell.self, forCellWithReuseIdentifier: "RecommendCell")
+        collectionView.register(
+            TodaySectionHeaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: TodaySectionHeaderView.reuseIdentifier
+        )
         collectionView.register(
             HeaderView.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: "HeaderView"
         )
+        collectionView.register(LargeCardCell.self, forCellWithReuseIdentifier: "LargeCardCell")
+        collectionView.register(MediumCardCell.self, forCellWithReuseIdentifier: "MediumCardCell")
+        collectionView.register(RecommendCell.self, forCellWithReuseIdentifier: "RecommendCell")
     }
 
     private func getLayout() -> UICollectionViewCompositionalLayout {
@@ -39,24 +45,44 @@ class TodayViewController: UIViewController {
     }
 
     private func getTodaySection() -> NSCollectionLayoutSection {
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(80))
-        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        let largeItemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(440)
+        )
+        let largeItem = NSCollectionLayoutItem(layoutSize: largeItemSize)
 
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(80))
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+        let mediumItemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(170)
+        )
+        let mediumItem = NSCollectionLayoutItem(layoutSize: mediumItemSize)
+
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(610)
+        )
+
+        let group = NSCollectionLayoutGroup.vertical(
+            layoutSize: groupSize,
+            subitems: [largeItem, mediumItem]
+        )
+        group.interItemSpacing = .fixed(16)
 
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
         section.interGroupSpacing = 16
+        section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
 
-        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(50))
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(60)
+        )
         let header = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: headerSize,
             elementKind: UICollectionView.elementKindSectionHeader,
             alignment: .top
         )
         section.boundarySupplementaryItems = [header]
-        
+
         return section
     }
 
@@ -68,7 +94,7 @@ class TodayViewController: UIViewController {
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
 
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 32, bottom: 16, trailing: 32)
 
         let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(60))
         let header = NSCollectionLayoutBoundarySupplementaryItem(
@@ -79,7 +105,7 @@ class TodayViewController: UIViewController {
         section.boundarySupplementaryItems = [header]
 
         let background = NSCollectionLayoutDecorationItem.background(elementKind: "section-background")
-        background.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+        background.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
         section.decorationItems = [background]
 
         return section
@@ -89,9 +115,14 @@ class TodayViewController: UIViewController {
         dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) {
             collectionView, indexPath, item in
             switch item {
-                case .card(let card):
-                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CardCell", for: indexPath) as! CardCell
-                    cell.label.text = card.title
+                case .largeCard(let largeCard):
+                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "LargeCardCell", for: indexPath) as! LargeCardCell
+                    cell.configure(with: largeCard)
+                    return cell
+
+                case .mediumCard(let mediumCard):
+                    let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MediumCardCell", for: indexPath) as! MediumCardCell
+                    cell.configure(with: mediumCard)
                     return cell
 
                 case .app(let app):
@@ -102,16 +133,25 @@ class TodayViewController: UIViewController {
         }
 
         dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-            let header = collectionView.dequeueReusableSupplementaryView(
-                ofKind: UICollectionView.elementKindSectionHeader,
-                withReuseIdentifier: "HeaderView",
-                for: indexPath
-            ) as! HeaderView
-
             let section = self.sections[indexPath.section]
-            header.configure(for: section)
 
-            return header
+            switch section {
+                case .today:
+                    let view = collectionView.dequeueReusableSupplementaryView(
+                        ofKind: kind,
+                        withReuseIdentifier: TodaySectionHeaderView.reuseIdentifier,
+                        for: indexPath
+                    ) as! TodaySectionHeaderView
+                    return view
+                default:
+                    let header = collectionView.dequeueReusableSupplementaryView(
+                        ofKind: UICollectionView.elementKindSectionHeader,
+                        withReuseIdentifier: "HeaderView",
+                        for: indexPath
+                    ) as! HeaderView
+                    header.configure(for: section)
+                    return header
+            }
         }
 
         var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()

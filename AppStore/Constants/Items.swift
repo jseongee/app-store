@@ -1,8 +1,23 @@
 import UIKit
 
 let todayItems: [Item] = [
-    .card(Card(title: "카드 1")),
-    .card(Card(title: "카드 2")),
+    .largeCard(
+        LargeCard(
+            subComment: "지금 APPLE ARCADE에서 만나요",
+            mainComment: "틀을 깨는 과감한 도전!",
+            appIcon: UIImage(systemName: "app")!,
+            appCategory: "Apple Arcade",
+            appName: "Angry Birds Bounce",
+            appDesc: "무리를 모으고 튕기세요!",
+        )
+    ),
+    .mediumCard(
+        MediumCard(
+            appIcon: UIImage(systemName: "app")!,
+            appName: "Temu: 억만장저처럼 쇼핑하기",
+            desc: "역대급 할인 혜택을 Temu에서 만나보세요"
+        )
+    )
 ]
 
 let recommendItems: [Item] = [
