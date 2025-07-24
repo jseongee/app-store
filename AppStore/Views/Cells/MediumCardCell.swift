@@ -68,7 +68,7 @@ final class MediumCardCell: UICollectionViewCell {
     }
 
     private func setup() {
-        contentView.backgroundColor = UIColor(red: 239/255, green: 108/255, blue: 0, alpha: 1)
+        contentView.backgroundColor = UIColor(red: 180/255, green: 105/255, blue: 43/255, alpha: 1)
         contentView.layer.cornerRadius = 16
         contentView.clipsToBounds = true
 

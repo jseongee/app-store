@@ -28,7 +28,7 @@ final class LargeCardCell: UICollectionViewCell {
 
     private func setup() {
         // contentView 자체에 배경색과 radius 적용
-        contentView.backgroundColor = UIColor(red: 53/255, green: 64/255, blue: 58/255, alpha: 1)
+        contentView.backgroundColor = UIColor(red: 66/255, green: 102/255, blue: 58/255, alpha: 1)
         contentView.layer.cornerRadius = 16
         contentView.clipsToBounds = true
 
